@@ -100,29 +100,29 @@ class MainActivity : AppCompatActivity() {
         bitmap?.compress(Bitmap.CompressFormat.JPEG, 90, stream)
         val byteArray = stream.toByteArray()
 
-        val url = "http://10.0.2.2:5000/api/predict"
+        val url = "http://192.168.1.92:5000/upload_and_predict" // cập nhật đúng endpoint
+
         val stringRequest = object : StringRequest(Method.POST, url,
             Response.Listener<String> { response ->
-                // Debug: Hiển thị phản hồi thô từ server
-                Toast.makeText(this@MainActivity, "Phản hồi: $response", Toast.LENGTH_LONG).show()
                 try {
                     val jsonResponse = JSONObject(response)
-                    if (jsonResponse.getBoolean("success")) {
-                        val predictions: JSONArray = jsonResponse.getJSONArray("predictions")
-                        val plantInfo: JSONObject = jsonResponse.getJSONObject("plant_info")
-                        val imageUrl: String = jsonResponse.getString("image_url")
 
-                        resultSection.visibility = View.VISIBLE
-                        resultHeader.text = "${predictions.getJSONObject(0).getString("label")} - ${predictions.getJSONObject(0).getDouble("score")}%"
-                        nutrientText.text = "Thành phần: ${if (plantInfo.has("thanh_phan")) plantInfo.getString("thanh_phan") else "Không có dữ liệu"}"
-                        benefitText.text = "Lợi ích: ${if (plantInfo.has("loi_ich")) plantInfo.getString("loi_ich") else "Không có dữ liệu"}"
-                        warningText.text = "Lưu ý: ${if (plantInfo.has("luu_y")) plantInfo.getString("luu_y") else "Không có dữ liệu"}"
-                    } else {
-                        Toast.makeText(this@MainActivity, "Lỗi: ${jsonResponse.getString("error")}", Toast.LENGTH_SHORT).show()
-                    }
+                    val predictedLabel = jsonResponse.getString("predicted_label")
+                    val info = jsonResponse.getJSONObject("info")
+                    val top3 = jsonResponse.getJSONArray("top3")
+                    val imageUrl = jsonResponse.getString("image_url")
+
+                    resultSection.visibility = View.VISIBLE
+                    val top1 = top3.getJSONObject(0)
+                    resultHeader.text = "${top1.getString("label")} - ${top1.getDouble("score")}%"
+
+                    nutrientText.text = "Thành phần: ${info.optString("thanh_phan", "Không có dữ liệu")}"
+                    benefitText.text = "Lợi ích: ${info.optString("loi_ich", "Không có dữ liệu")}"
+                    warningText.text = "Lưu ý: ${info.optString("luu_y", "Không có dữ liệu")}"
+
                 } catch (e: JSONException) {
                     e.printStackTrace()
-                    Toast.makeText(this@MainActivity, "Lỗi phân tích JSON: ${e.message}", Toast.LENGTH_LONG).show()
+                    Toast.makeText(this@MainActivity, "Lỗi JSON: ${e.message}", Toast.LENGTH_LONG).show()
                 }
             },
             Response.ErrorListener { error ->
@@ -130,22 +130,18 @@ class MainActivity : AppCompatActivity() {
             }) {
 
             override fun getBodyContentType(): String {
-                return "multipart/form-data;boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW"
+                return "multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW"
             }
 
             override fun getBody(): ByteArray {
                 val params = HashMap<String, String>()
-                params["user_id"] = "anonymous"
                 return getMultipartBody(params, byteArray)
-            }
-
-            override fun parseNetworkResponse(response: NetworkResponse): Response<String> {
-                return super.parseNetworkResponse(response)
             }
         }
 
         requestQueue.add(stringRequest)
     }
+
 
     private fun getMultipartBody(params: Map<String, String>, imageBytes: ByteArray): ByteArray {
         val boundary = "----WebKitFormBoundary7MA4YWxkTrZu0gW"
