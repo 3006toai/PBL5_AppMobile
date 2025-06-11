@@ -1,5 +1,6 @@
 package com.example.myapplication
 
+import android.annotation.SuppressLint
 import android.content.Intent
 import android.graphics.Bitmap
 import android.net.Uri
@@ -36,6 +37,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var requestQueue: RequestQueue
     private var imageUrl: String? = null
 
+    @SuppressLint("MissingInflatedId")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -60,6 +62,11 @@ class MainActivity : AppCompatActivity() {
         val scanButton: LinearLayout = findViewById(R.id.scan_button)
         scanButton.setOnClickListener {
             val intent = Intent(this, CameraActivity::class.java)
+            startActivity(intent)
+        }
+        val searchButton = findViewById<LinearLayout>(R.id.search_button)
+        searchButton.setOnClickListener {
+            val intent = Intent(this, SocKetActivity::class.java)
             startActivity(intent)
         }
 
@@ -100,7 +107,7 @@ class MainActivity : AppCompatActivity() {
         bitmap?.compress(Bitmap.CompressFormat.JPEG, 90, stream)
         val byteArray = stream.toByteArray()
 
-        val url = "http://192.168.1.92:5000/upload_and_predict" // cập nhật đúng endpoint
+        val url = "http://172.20.10.6:5000/upload_and_predict" // cập nhật đúng endpoint
 
         val stringRequest = object : StringRequest(Method.POST, url,
             Response.Listener<String> { response ->
@@ -116,9 +123,34 @@ class MainActivity : AppCompatActivity() {
                     val top1 = top3.getJSONObject(0)
                     resultHeader.text = "${top1.getString("label")} - ${top1.getDouble("score")}%"
 
-                    nutrientText.text = "Thành phần: ${info.optString("thanh_phan", "Không có dữ liệu")}"
-                    benefitText.text = "Lợi ích: ${info.optString("loi_ich", "Không có dữ liệu")}"
-                    warningText.text = "Lưu ý: ${info.optString("luu_y", "Không có dữ liệu")}"
+                    // Xử lý thanh_phan: Đổi thứ tự Tên trước, Giá trị sau, bỏ dấu :, xóa dấu , thừa
+                    nutrientText.text = info.optString("thanh_phan", "Không có dữ liệu")
+                        .replace("[", "")
+                        .replace("]", "")
+                        .replace("\\", "")
+                        .split("{")
+                        .map { item ->
+                            val parts = item.trim().split(",")
+                            val tenPart = parts.find { it.contains("ten") }?.replace("ten", "")?.replace(":", "")?.replace("\"", "")
+                            val giaTriPart = parts.find { it.contains("gia_tri") }?.replace("gia_tri", "--- Giá trị ")?.replace(":", "")?.replace("\"", "")
+                            if (tenPart != null && giaTriPart != null) "$tenPart, $giaTriPart".replace("},", "").replace("}", "")
+                            else item.trim().replace("},", "").replace("}", "")
+                        }
+                        .joinToString("\n")
+                    // Xử lý loi_ich: Đảm bảo xuống dòng sau mỗi thông tin trong "", xóa dấu , thừa
+                    benefitText.text = info.optString("loi_ich", "Không có dữ liệu")
+                        .replace("[", "")
+                        .replace("]", "")
+                        .replace("\\", "")
+                        .split("\"")
+                        .filter { it.isNotEmpty() }
+                        .joinToString("\n") { it.trim().replace(",", "") }
+                    warningText.text = info.optString("luu_y", "Không có dữ liệu")
+                        .replace("[", "")
+                        .replace("]", "")
+                        .replace("\\", "")
+                        .split("{")
+                        .joinToString("\n") { it.trim().replace("}", "\n").replace("gia_tri", "Giá trị").replace("ten", "Tên").replace("\"", "") }
 
                 } catch (e: JSONException) {
                     e.printStackTrace()
@@ -141,6 +173,8 @@ class MainActivity : AppCompatActivity() {
 
         requestQueue.add(stringRequest)
     }
+
+
 
 
     private fun getMultipartBody(params: Map<String, String>, imageBytes: ByteArray): ByteArray {

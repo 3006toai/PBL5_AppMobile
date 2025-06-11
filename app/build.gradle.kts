@@ -59,6 +59,8 @@ dependencies {
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
+    implementation(libs.androidx.camera.view)
+    implementation(libs.androidx.camera.lifecycle)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -74,7 +76,13 @@ dependencies {
     implementation ("com.squareup.picasso:picasso:2.71828")
     implementation("com.github.bumptech.glide:glide:4.16.0")
     implementation ("com.google.code.gson:gson:2.10.1")
-
+    annotationProcessor ("com.github.bumptech.glide:compiler:4.16.0")
+    implementation("io.socket:socket.io-client:2.0.1") {
+        exclude(group = "org.json", module = "json")
+    }
+    implementation ("io.socket:socket.io-client:2.0.1")
+    implementation("com.squareup.okhttp3:okhttp:4.10.0")
+    implementation("com.google.code.gson:gson:2.10.1")
 
 
 

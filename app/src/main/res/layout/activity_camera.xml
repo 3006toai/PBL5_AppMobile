@@ -1,48 +1,105 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:orientation="vertical"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:padding="16dp">
-
-    <WebView
-        android:id="@+id/webView"
-        android:layout_width="match_parent"
-        android:layout_height="300dp" />
-
-    <ImageView
-        android:id="@+id/camera_image_view"
-        android:layout_width="match_parent"
-        android:layout_height="300dp"
-        android:visibility="gone"
-        android:scaleType="centerCrop"
-        android:background="#CCCCCC" />
+    android:layout_height="match_parent">
 
     <LinearLayout
-        android:id="@+id/result_section"
         android:orientation="vertical"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:visibility="gone"
-        android:paddingTop="8dp"
-        android:paddingBottom="8dp">
+        android:padding="16dp"
+        tools:ignore="WebViewLayout">
 
-        <TextView
-            android:id="@+id/result_text"
+        <WebView
+            android:id="@+id/webView"
+            android:layout_width="match_parent"
+            android:background="@drawable/rounded_webview_bg"
+            android:layout_height="300dp" />
+
+        <ImageView
+            android:id="@+id/camera_image_view"
+            android:layout_width="match_parent"
+            android:layout_height="300dp"
+            android:visibility="gone"
+            android:scaleType="centerCrop"
+            android:background="#CCCCCC" />
+
+        <LinearLayout
+            android:id="@+id/result_section"
+            android:orientation="vertical"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:textSize="18sp"
-            android:textColor="#333333"
-            android:padding="8dp"
-            android:background="#F5F5F5"
-            android:textStyle="bold" />
-    </LinearLayout>
+            android:visibility="gone"
+            android:paddingTop="8dp"
+            android:paddingBottom="8dp">
 
-    <Button
-        android:id="@+id/btnCapture"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Chụp"
-        android:layout_gravity="center_horizontal"
-        android:layout_marginTop="16dp"/>
-</LinearLayout>
+            <TextView
+                android:id="@+id/result_text"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textSize="18sp"
+                android:textColor="#333333"
+                android:padding="8dp"
+                android:background="#F5F5F5"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="🔍 Thành phần:"
+                android:textSize="16sp"
+                android:textColor="#2e7d32"
+                android:layout_marginTop="8dp" />
+
+            <TextView
+                android:id="@+id/nutrient_text"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textSize="14sp"
+                android:lineSpacingExtra="4dp"
+                android:textColor="#000000" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="💚 Lợi ích:"
+                android:textSize="16sp"
+                android:textColor="#2e7d32"
+                android:layout_marginTop="8dp" />
+
+            <TextView
+                android:id="@+id/benefit_text"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textSize="14sp"
+                android:lineSpacingExtra="4dp"
+                android:textColor="#000000" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="⚠️ Lưu ý:"
+                android:textSize="16sp"
+                android:textColor="#2e7d32"
+                android:layout_marginTop="8dp" />
+
+            <TextView
+                android:id="@+id/warning_text"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textSize="14sp"
+                android:lineSpacingExtra="4dp"
+                android:textColor="#d32f2f" />
+        </LinearLayout>
+
+        <Button
+            android:id="@+id/btnCapture"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Chụp"
+            android:background="@drawable/rounded_button"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="16dp"/>
+    </LinearLayout>
+</ScrollView>
