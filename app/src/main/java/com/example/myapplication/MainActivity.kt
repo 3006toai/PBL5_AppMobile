@@ -16,7 +16,6 @@ import androidx.appcompat.app.AppCompatActivity
 import com.android.volley.*
 import com.android.volley.toolbox.StringRequest
 import com.android.volley.toolbox.Volley
-import org.json.JSONArray
 import org.json.JSONException
 import org.json.JSONObject
 import java.io.ByteArrayOutputStream
@@ -107,7 +106,7 @@ class MainActivity : AppCompatActivity() {
         bitmap?.compress(Bitmap.CompressFormat.JPEG, 90, stream)
         val byteArray = stream.toByteArray()
 
-        val url = "http://172.20.10.6:5000/upload_and_predict" // cập nhật đúng endpoint
+        val url = "http://192.168.1.139:5000/upload_and_predict" // cập nhật đúng endpoint
 
         val stringRequest = object : StringRequest(Method.POST, url,
             Response.Listener<String> { response ->

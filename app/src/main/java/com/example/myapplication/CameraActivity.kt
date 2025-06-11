@@ -16,7 +16,7 @@ import com.android.volley.toolbox.Volley
 import com.android.volley.VolleyError
 
 class CameraActivity : AppCompatActivity() {
-    private val serverUrl = "http://172.20.10.6:5000" // Ensure this matches your Flask server IP
+    private val serverUrl = "http://192.168.1.139:5000" // Ensure this matches your Flask server IP
     private lateinit var webView: WebView
     private lateinit var imageView: ImageView
     private lateinit var btnCapture: Button
@@ -27,6 +27,7 @@ class CameraActivity : AppCompatActivity() {
     private lateinit var warningText: TextView
     private lateinit var resultHeader: TextView
     private lateinit var queue: com.android.volley.RequestQueue
+    private lateinit var btnReset: Button
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -49,8 +50,21 @@ class CameraActivity : AppCompatActivity() {
         btnCapture.setOnClickListener {
             captureAndShowResult()
         }
+        btnReset = findViewById(R.id.btnReset)
+
+        btnReset.setOnClickListener {
+            resetView()
+        }
     }
 
+    private fun resetView() {
+        // Ẩn ảnh và kết quả, hiện lại camera
+        imageView.visibility = View.GONE
+        resultSection.visibility = View.GONE
+        webView.visibility = View.VISIBLE
+        // Load lại WebView để đảm bảo video feed hoạt động
+        webView.loadUrl("$serverUrl/video_feed")
+    }
     private fun captureAndShowResult() {
         val queue = Volley.newRequestQueue(this)
         val url = "$serverUrl/capture_and_predict"

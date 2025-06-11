@@ -1,17 +1,20 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:orientation="vertical" android:layout_width="match_parent"
-    android:layout_height="match_parent" android:padding="8dp">
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
 
-    <androidx.camera.view.PreviewView
-        android:id="@+id/previewView"
+    <!-- WebView hiển thị video -->
+    <WebView
+        android:id="@+id/webview_video"
         android:layout_width="match_parent"
-        android:layout_height="400dp" />
+        android:layout_height="300dp" />
 
+    <!-- TextView hiển thị dự đoán -->
     <TextView
-        android:id="@+id/resultText"
+        android:id="@+id/text_prediction"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Kết quả"
-        android:paddingTop="16dp"
-        android:textSize="18sp"/>
+        android:text="Kết quả dự đoán..."
+        android:textSize="18sp"
+        android:padding="16dp" />
 </LinearLayout>

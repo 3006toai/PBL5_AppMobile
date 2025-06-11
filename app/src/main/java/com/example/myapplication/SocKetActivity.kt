@@ -1,127 +1,81 @@
 package com.example.myapplication
 
-import android.Manifest
-import android.graphics.Bitmap
-import android.os.Bundle
-import android.util.Base64
-import android.util.Log
+import android.annotation.SuppressLint
+import android.os.Handler
+import android.os.Looper
+import android.webkit.WebView
 import android.widget.TextView
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
-import androidx.camera.core.*
-import androidx.camera.lifecycle.ProcessCameraProvider
-import androidx.camera.view.PreviewView
-import androidx.core.content.ContextCompat
+import android.os.Bundle
+
+import io.socket.client.IO
+import io.socket.client.Socket
 import org.json.JSONObject
-import java.io.ByteArrayOutputStream
-import java.util.concurrent.Executors
+
 
 class SocKetActivity : AppCompatActivity() {
+    private lateinit var webView: WebView
+    private lateinit var predictionText: TextView
+    private lateinit var mSocket: Socket
 
-    private lateinit var previewView: PreviewView
-    private lateinit var resultText: TextView
 
-    private val executor = Executors.newSingleThreadExecutor()
-    private var lastSendTime = 0L // Để giới hạn gửi 1 ảnh mỗi giây
-
+    @SuppressLint("MissingInflatedId")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.socket)
 
-        previewView = findViewById(R.id.previewView)
-        resultText = findViewById(R.id.resultText)
+        webView = findViewById(R.id.webview_video)
+        predictionText = findViewById(R.id.text_prediction)
 
-        requestPermissionAndStartCamera()
+        // Load video stream
+        webView.settings.javaScriptEnabled = true
+        webView.loadUrl("http://192.168.1.139:5000/video_feed") // thay YOUR_IP bằng IP server Flask
 
-        // Kết nối socket
-        SocketManager.initSocket()
-        SocketManager.connect()
+        // Kết nối WebSocket
+        try {
+            val opts = IO.Options()
+            opts.forceNew = true
+            opts.reconnection = true
+            mSocket = IO.socket("http://192.168.1.139:5000", opts) // same IP
+            mSocket.connect()
 
-        SocketManager.socket.on("prediction_result") { args ->
-            if (args.isNotEmpty()) {
-                val data = args[0] as JSONObject
+
+            mSocket.on("prediction_result") { args ->
                 runOnUiThread {
-                    if (data.has("error")) {
-                        resultText.text = "Lỗi: ${data.getString("error")}"
-                    } else {
+                    val data = args[0] as JSONObject
+                    if (data.has("predicted_label")) {
                         val label = data.getString("predicted_label")
-                        val info = data.getJSONObject("info").optString("info", "")
-                        resultText.text = "Dự đoán: $label\nThông tin: $info"
+                        val info = data.getJSONObject("info").toString()
+
+                        // Get top 3 predictions
+                        val top3 = data.getJSONArray("top3")
+                        val top3List = StringBuilder("Top 3 Predictions\n")
+                        for (i in 0 until top3.length()) {
+                            val obj = top3.getJSONObject(i)
+                            val lbl = obj.getString("label")
+                            val score = obj.getDouble("score")
+                            top3List.append("$lbl: $score%\n")
+                        }
+                        predictionText.text = "Dự đoán: $label\n\n$top3List"
+//                        predictionText.text = "Dự đoán: $label\n$info\n\n$top3List"
+                    } else if (data.has("error")) {
+                        predictionText.text = "Lỗi: ${data.getString("error")}"
                     }
                 }
             }
+
+        } catch (e: Exception) {
+            predictionText.text = "Lỗi kết nối socket: ${e.message}"
         }
-    }
 
-    private fun requestPermissionAndStartCamera() {
-        val requestPermission = registerForActivityResult(
-            ActivityResultContracts.RequestPermission()
-        ) { granted ->
-            if (granted) startCamera()
-            else resultText.text = "Yêu cầu quyền Camera!"
-        }
-        requestPermission.launch(Manifest.permission.CAMERA)
-    }
-
-    private fun startCamera() {
-        val cameraProviderFuture = ProcessCameraProvider.getInstance(this)
-        cameraProviderFuture.addListener({
-            val cameraProvider = cameraProviderFuture.get()
-
-            val preview = Preview.Builder().build().also {
-                it.setSurfaceProvider(previewView.surfaceProvider)
+        // Gửi yêu cầu mỗi giây để nhận frame xử lý
+        val handler = Handler(Looper.getMainLooper())
+        val frameRunnable = object : Runnable {
+            override fun run() {
+                mSocket.emit("stream_frame", JSONObject())  // gửi yêu cầu xử lý frame
+                handler.postDelayed(this, 500)  // lặp lại sau 1s
             }
-
-            val imageCapture = ImageCapture.Builder()
-                .setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY)
-                .build()
-
-            val imageAnalyzer = ImageAnalysis.Builder()
-                .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
-                .build()
-                .also {
-                    it.setAnalyzer(executor, { imageProxy ->
-                        processImageFrame(imageProxy)
-                    })
-                }
-
-            val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
-
-            try {
-                cameraProvider.unbindAll()
-                cameraProvider.bindToLifecycle(
-                    this, cameraSelector, preview, imageAnalyzer
-                )
-            } catch (e: Exception) {
-                Log.e("Camera", "Không thể khởi động camera", e)
-            }
-
-        }, ContextCompat.getMainExecutor(this))
-    }
-
-    private fun processImageFrame(imageProxy: ImageProxy) {
-        val now = System.currentTimeMillis()
-        if (now - lastSendTime >= 1000) {
-            val bitmap = imageProxy.toBitmap()
-            sendFrameToServer(bitmap)
-            lastSendTime = now
         }
-        imageProxy.close()
-    }
-
-    private fun sendFrameToServer(bitmap: Bitmap) {
-        val output = ByteArrayOutputStream()
-        bitmap.compress(Bitmap.CompressFormat.JPEG, 80, output)
-        val base64Image = Base64.encodeToString(output.toByteArray(), Base64.NO_WRAP)
-
-        val json = JSONObject()
-        json.put("image", base64Image)
-
-        SocketManager.socket.emit("stream_frame", json)
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        SocketManager.disconnect()
+        handler.post(frameRunnable)
     }
 }

@@ -1,13 +1,13 @@
-import okhttp3.MultipartBody
+import com.example.myapplication.HistoryItem
 import retrofit2.Call
-import retrofit2.http.Multipart
-import retrofit2.http.POST
-import retrofit2.http.Part
+import retrofit2.http.GET
 
 interface ApiService {
-    @Multipart
-    @POST("api/predict")
-    fun predictImage(
-        @Part image: MultipartBody.Part
-    ): Call<PredictionResponse>
+    @GET("/api/history")
+    fun getHistory(): Call<HistoryResponse>
 }
+
+data class HistoryResponse(
+    val success: Boolean,
+    val history: List<HistoryItem>
+)
